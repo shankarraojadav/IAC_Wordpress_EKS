@@ -1,128 +1,88 @@
-# resource "kubernetes_persistent_volume_claim" "wp-pvc1" {
-#   metadata {
-#     name   = "wp-pvc1"
-#     labels = {
-#       env     = "Production"
-#       Country = "India"
-#     }
-#   }
-
-#   wait_until_bound = false
-#   spec {
-#     access_modes = ["ReadWriteOnce"]
-#     resources {
-#       requests = {
-#         storage = "5Gi"
-#       }
-#     }
-#   }
-# }
-
-//Creating Deployment for WordPress
-resource "kubernetes_deployment" "wp-dep" {
+resource "kubernetes_deployment" "ks_dep" {
   metadata {
-    name   = "wp-dep"
-     labels = {
+    name = "ks-dep"
+    labels = {
       App = "wordpress"
     }
   }
 
-
   spec {
     replicas = 2
+
     selector {
       match_labels = {
-        pod     = "wp"
+        pod = "wordapp"
       }
     }
 
     template {
       metadata {
         labels = {
-          pod     = "wp"
-          env     = "Production"
-          Country = "India"
+         pod = "wordapp"
         }
       }
 
       spec {
-        # volume {
-        #   name = "wp-vol"
-        #   persistent_volume_claim {
-        #     claim_name = kubernetes_persistent_volume_claim.wp-pvc1.metadata[0].name
-        #   }
-        # }
-
         container {
-          image = "wordpress"
-          name  = "wp-container"
+          image = "wordpress:latest"
+          name  = "wordapp"
 
           env {
             name  = "WORDPRESS_DB_HOST"
-            value = aws_db_instance.default.endpoint
+            value = aws_db_instance.wordpress_db.endpoint
           }
           env {
             name  = "WORDPRESS_DB_USER"
-            value = aws_db_instance.default.username
+            value = aws_db_instance.wordpress_db.username
           }
           env {
             name  = "WORDPRESS_DB_PASSWORD"
-            value = aws_db_instance.default.password
+            value = aws_db_instance.wordpress_db.password
           }
           env {
             name  = "WORDPRESS_DB_NAME"
-            value = aws_db_instance.default.db_name
+            value = aws_db_instance.wordpress_db.db_name
           }
           env {
             name  = "WORDPRESS_TABLE_PREFIX"
             value = "wp_"
           }
-          # volume_mount {
-            # name       = "wp-vol"
-             #mount_path = "/var/www/html/"
-           #}
-
-          port {
-            container_port = 80
+          resources {
+            limits = {
+              cpu    = "0.5"
+              memory = "512Mi"
+            }
+            requests = {
+              cpu    = "250m"
+              memory = "50Mi"
+            }
           }
-
         }
       }
     }
   }
 }
 
-//Creating LoadBalancer Service for WordPress Pods
-resource "kubernetes_service" "wpService" {
+resource "kubernetes_service" "ks_svc" {
   metadata {
-    name   = "wp-svc"
-    labels = {
-      env     = "Production"
-      Country = "India"
-    }
+    name = "terraform-example"
   }
 
+
   depends_on = [
-    kubernetes_deployment.wp-dep
+    kubernetes_deployment.ks_dep
   ]
 
   spec {
-    type     = "LoadBalancer"
     selector = {
-          pod = kubernetes_deployment.wp-dep.metadata[0].labels.App
-}
-
+       app = kubernetes_deployment.ks_dep.metadata[0].labels.App
+    }
     port {
-      name = "wp-port"
-      port = 80
+      port        = 8080
       target_port = 80
     }
-  }
-}
 
-//Wait For LoadBalancer to Register IPs
-resource "time_sleep" "wait_60_seconds" {
-  create_duration = "60s"
-  depends_on      = [kubernetes_service.wpService]
+    type = "LoadBalancer"
+  }
 }
 
