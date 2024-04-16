@@ -54,7 +54,7 @@ resource "kubernetes_deployment" "wp-dep" {
         # }
 
         container {
-          image = "wordpress:4.8-apache"
+          image = "wordpress"
           name  = "wp-container"
 
           env {
@@ -125,3 +125,4 @@ resource "time_sleep" "wait_60_seconds" {
   create_duration = "60s"
   depends_on      = [kubernetes_service.wpService]
 }
+

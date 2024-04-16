@@ -1,4 +1,3 @@
-ubuntu@ip-172-31-39-171:~/eks_rds_terraform$ cat eks-cluster.tf
 #
 # EKS Cluster Resources
 #  * IAM Role to allow EKS service to manage other AWS services
