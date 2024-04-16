@@ -2,7 +2,7 @@ resource "kubernetes_deployment" "ks_dep" {
   metadata {
     name = "ks-dep"
     labels = {
-      App = "wordpress"
+      app = "wordpress"
     }
   }
 
@@ -18,7 +18,7 @@ resource "kubernetes_deployment" "ks_dep" {
     template {
       metadata {
         labels = {
-         pod = "wordapp"
+          pod = "wordapp"
         }
       }
 
@@ -68,18 +68,17 @@ resource "kubernetes_service" "ks_svc" {
     name = "terraform-example"
   }
 
-
   depends_on = [
     kubernetes_deployment.ks_dep
   ]
 
   spec {
     selector = {
-       app = kubernetes_deployment.ks_dep.metadata[0].labels.App
+       "app" = "wordpress"
     }
     port {
       port        = 8080
-      target_port = 80
+      target_port = 8000
     }
 
     type = "LoadBalancer"
